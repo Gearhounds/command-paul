@@ -4,15 +4,31 @@
 
 package frc.robot;
 
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import frc.robot.commands.SwerveJoystickCmd;
+import frc.robot.subsystems.SwerveSubsystem;
 
 public class RobotContainer {
+  private final SwerveSubsystem swerveSubsystem = new SwerveSubsystem();
+
+  private final XboxController driverController = new XboxController(0);
   public RobotContainer() {
+    driverController.getLeftY();
+    swerveSubsystem.setDefaultCommand(new SwerveJoystickCmd(
+      swerveSubsystem,
+      () -> -driverController.getLeftY(), 
+      () -> driverController.getLeftX(), 
+      () -> driverController.getRightX(), 
+      () -> driverController.getAButton()));
     configureBindings();
   }
 
-  private void configureBindings() {}
+  private void configureBindings() {
+    new JoystickButton(driverController, 1).onTrue(Commands.run(() -> swerveSubsystem.zeroHeading()));
+  }
 
   public Command getAutonomousCommand() {
     return Commands.print("No autonomous command configured");
