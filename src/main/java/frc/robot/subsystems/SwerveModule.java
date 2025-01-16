@@ -9,6 +9,7 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import frc.robot.Constants;
 import frc.robot.Constants.ModuleConstants;
 
 import com.revrobotics.RelativeEncoder;
@@ -19,10 +20,10 @@ import com.revrobotics.spark.SparkFlex;
 
 public class SwerveModule {
 
-    public final SparkFlex driveMotor;
+    public final SparkMax driveMotor;
     public final SparkMax turningMotor;
 
-    SparkFlexConfig driveConfig;
+    SparkMaxConfig driveConfig;
     SparkMaxConfig turnConfig;
     
 
@@ -38,14 +39,14 @@ public class SwerveModule {
     public SwerveModule (int driveMotorID, int turningMotorId, boolean driveMotorReversed,
         boolean turningMotorReversed, int absEncoderID, double absEncoderOffset, boolean absEncoderReversed) {
 
-            driveMotor = new SparkFlex(driveMotorID, MotorType.kBrushless);
+            driveMotor = new SparkMax(driveMotorID, MotorType.kBrushless);
             turningMotor = new SparkMax(turningMotorId, MotorType.kBrushless);
             
             this.absEncoderOffsetRad = absEncoderOffset;
             this.absEncoderReversed = absEncoderReversed;
             absEncoder = turningMotor.getAbsoluteEncoder();
 
-            driveConfig = new SparkFlexConfig();
+            driveConfig = new SparkMaxConfig();
             driveConfig
                 .inverted(driveMotorReversed)
                 .idleMode(IdleMode.kBrake);
@@ -106,7 +107,7 @@ public class SwerveModule {
                 return;
             }
             state = SwerveModuleState.optimize(state, getState().angle);
-            driveMotor.set(state.speedMetersPerSecond); //Divide by robot's max speed in m/s
+            driveMotor.set(state.speedMetersPerSecond / Constants.DriveConstants.kMaxSpeedMetersPerSecond);
             turningMotor.set(turningPidController.calculate(getTurningPosition(), state.angle.getRadians()));
             
         }

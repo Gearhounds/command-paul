@@ -2,14 +2,11 @@ package frc.robot.commands;
 
 import java.util.function.Supplier;
 
-import com.ctre.phoenix6.swerve.SwerveModule;
-
 import edu.wpi.first.math.filter.SlewRateLimiter;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants;
 import frc.robot.subsystems.SwerveSubsystem;
 
 public class SwerveJoystickCmd extends Command {
@@ -27,9 +24,9 @@ public class SwerveJoystickCmd extends Command {
             this.ySpdFunction = ySpdFunction;
             this.turningSpdFunction = turningSpdFunction;
             this.fieldOrientedFunction = fieldOrientedFunction;
-            this.xLimiter = new SlewRateLimiter(0); // Input Constants
-            this.yLimiter = new SlewRateLimiter(0); // Input Constants
-            this.turningLimiter = new SlewRateLimiter(0); // Input Constants
+            this.xLimiter = new SlewRateLimiter(Constants.ModuleConstants.kDriveEncoderRPM2MeterPerSec);
+            this.yLimiter = new SlewRateLimiter(Constants.ModuleConstants.kDriveEncoderRPM2MeterPerSec);
+            this.turningLimiter = new SlewRateLimiter(Constants.ModuleConstants.kTurningEncoderRPM2RadPerSec);
             addRequirements(swerveSubsystem);
     }
 
@@ -51,9 +48,9 @@ public class SwerveJoystickCmd extends Command {
         turningSpeed = Math.abs(turningSpeed) > 0.01 ? turningSpeed  : 0;
 
         // 3. Make the driving smoother
-        xSpeed = xLimiter.calculate(xSpeed); // Multiply by max speed
-        ySpeed = yLimiter.calculate(ySpeed); // Multiply by max speed
-        turningSpeed = turningLimiter.calculate(turningSpeed); // Multiply by max speed
+        xSpeed = xLimiter.calculate(xSpeed * Constants.DriveConstants.kMaxSpeedMetersPerSecond);
+        ySpeed = yLimiter.calculate(ySpeed * Constants.DriveConstants.kMaxSpeedMetersPerSecond);
+        turningSpeed = turningLimiter.calculate(turningSpeed * Constants.DriveConstants.kMaxTurnSpeedRadPerSecond);
 
         // 4. Construct desired chassis speeds
         @SuppressWarnings("unused")
@@ -68,10 +65,10 @@ public class SwerveJoystickCmd extends Command {
         }
 
         // 5. Convert chassis speeds to individual module states
-        // SwerveModuleState[] moduleStates = new SwerveModuleState[]; // TODO use kinematics method from constants  toModuleStates
+        SwerveModuleState[] moduleStates = Constants.DriveConstants.kDriveKinematics.toSwerveModuleStates(chassisSpeeds);
 
         // 6. Output each module states to wheels
-        // swerveSubsystem.setModuleStates(/* moduleStates */); TODO
+        swerveSubsystem.setModuleStates(moduleStates);
     }
 
     @Override
