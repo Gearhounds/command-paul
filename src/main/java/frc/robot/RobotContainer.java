@@ -5,6 +5,7 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
@@ -19,15 +20,17 @@ public class RobotContainer {
     driverController.getLeftY();
     swerveSubsystem.setDefaultCommand(new SwerveJoystickCmd(
       swerveSubsystem,
-      () -> -driverController.getLeftY(), 
-      () -> driverController.getLeftX(), 
+      () -> -driverController.getLeftX(), 
+      () -> driverController.getLeftY(), 
       () -> driverController.getRightX(), 
-      () -> driverController.getAButton()));
+      () -> false));
+      SmartDashboard.putBoolean("Running Robot Container", true);
     configureBindings();
   }
 
   private void configureBindings() {
     new JoystickButton(driverController, 1).onTrue(Commands.run(() -> swerveSubsystem.zeroHeading()));
+    
   }
 
   public Command getAutonomousCommand() {

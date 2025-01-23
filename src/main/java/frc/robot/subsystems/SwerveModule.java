@@ -5,13 +5,15 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
-
+import com.revrobotics.spark.SparkLowLevel;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.Constants.ModuleConstants;
 
+import com.ctre.phoenix.sensors.CANCoder;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkAbsoluteEncoder;
 import com.revrobotics.spark.SparkBase.PersistMode;
@@ -32,7 +34,8 @@ public class SwerveModule {
 
     private final PIDController turningPidController;
 
-    private final SparkAbsoluteEncoder absEncoder;
+    // private final SparkAbsoluteEncoder absEncoder;
+    private final CANCoder absEncoder;
     private final boolean absEncoderReversed;
     private final double absEncoderOffsetRad;
 
@@ -44,7 +47,7 @@ public class SwerveModule {
             
             this.absEncoderOffsetRad = absEncoderOffset;
             this.absEncoderReversed = absEncoderReversed;
-            absEncoder = turningMotor.getAbsoluteEncoder();
+            absEncoder = new CANCoder(absEncoderID);
 
             driveConfig = new SparkMaxConfig();
             driveConfig
@@ -70,18 +73,22 @@ public class SwerveModule {
         }
 
         public double getDrivePosition() {
+            SmartDashboard.putBoolean("Running Get Drive Position", true);
             return driveEncoder.getPosition();
         }
 
         public double getTurningPosition() {
+            SmartDashboard.putBoolean("Running Get Turn Position", true);
             return turningEncoder.getPosition();
         }
 
         public double getDriveVelocity() {
+            SmartDashboard.putBoolean("Running Get Drive Velo", true);
             return driveEncoder.getVelocity();
         }
 
         public double getTurningVelocity() {
+            SmartDashboard.putBoolean("Running Get Turn Velo", true);
             return turningEncoder.getVelocity();
         }
 
@@ -98,18 +105,23 @@ public class SwerveModule {
         }
         
         public SwerveModuleState getState() {
+            SmartDashboard.putBoolean("Running Get States", true);
             return new SwerveModuleState(getDriveVelocity(), new Rotation2d(getTurningPosition()));
         }
         
         public void setDesiredState(SwerveModuleState state) {
+            SmartDashboard.putBoolean("Running Set Desired State", true);
             if (Math.abs(state.speedMetersPerSecond) < 0.001) {
                 stop();
                 return;
             }
             state = SwerveModuleState.optimize(state, getState().angle);
-            driveMotor.set(state.speedMetersPerSecond / Constants.DriveConstants.kMaxSpeedMetersPerSecond);
-            turningMotor.set(turningPidController.calculate(getTurningPosition(), state.angle.getRadians()));
-            
+            driveMotor.set(Math.abs(state.speedMetersPerSecond / Constants.DriveConstants.kMaxSpeedMetersPerSecond));
+            turningMotor.set(turningPidController.calculate(getAbsEncoderRad(), state.angle.getRadians()));
+            SmartDashboard.putNumber("Wheel Set Angle", state.angle.getDegrees());
+            SmartDashboard.putNumber("Wheel Set Speed", state.speedMetersPerSecond / Constants.DriveConstants.kMaxSpeedMetersPerSecond);
+            SmartDashboard.putNumber("Wheel Turn Speed", turningPidController.calculate(getAbsEncoderRad(), state.angle.getRadians()));
+            SmartDashboard.putString("Desired State", state.toString());
         }
 
         public void stop() {

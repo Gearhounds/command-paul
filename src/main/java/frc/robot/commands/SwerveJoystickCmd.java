@@ -1,10 +1,12 @@
 package frc.robot.commands;
 
+import java.io.Console;
 import java.util.function.Supplier;
 
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants;
 import frc.robot.subsystems.SwerveSubsystem;
@@ -42,18 +44,29 @@ public class SwerveJoystickCmd extends Command {
         double ySpeed = ySpdFunction.get();
         double turningSpeed = turningSpdFunction.get();
 
+        SmartDashboard.putNumber("X Speed Pre Deadband", xSpeed);
+        SmartDashboard.putNumber("Y Speed Pre Deadband", ySpeed);
+        SmartDashboard.putNumber("Turn Speed Pre Deadband", turningSpeed);
+
         // 2. Apply deadband
-        xSpeed = Math.abs(xSpeed) > 0.01 ? xSpeed  : 0;
-        ySpeed = Math.abs(ySpeed) > 0.01 ? ySpeed  : 0;
-        turningSpeed = Math.abs(turningSpeed) > 0.01 ? turningSpeed  : 0;
+        xSpeed = Math.abs(xSpeed) > 0.075 ? xSpeed  : 0;
+        ySpeed = Math.abs(ySpeed) > 0.075 ? ySpeed  : 0;
+        turningSpeed = Math.abs(turningSpeed) > 0.075 ? turningSpeed  : 0;
+
+        SmartDashboard.putNumber("X Speed Post Deadband", xSpeed);
+        SmartDashboard.putNumber("Y Speed Post Deadband", ySpeed);
+        SmartDashboard.putNumber("Turning Speed Pre Deadband", turningSpeed);
 
         // 3. Make the driving smoother
-        xSpeed = xLimiter.calculate(xSpeed * Constants.DriveConstants.kMaxSpeedMetersPerSecond);
-        ySpeed = yLimiter.calculate(ySpeed * Constants.DriveConstants.kMaxSpeedMetersPerSecond);
-        turningSpeed = turningLimiter.calculate(turningSpeed * Constants.DriveConstants.kMaxTurnSpeedRadPerSecond);
+        // xSpeed = xLimiter.calculate(xSpeed * Constants.DriveConstants.kMaxSpeedMetersPerSecond);
+        // ySpeed = yLimiter.calculate(ySpeed * Constants.DriveConstants.kMaxSpeedMetersPerSecond);
+        // turningSpeed = turningLimiter.calculate(turningSpeed * Constants.DriveConstants.kMaxTurnSpeedRadPerSecond);
 
+        SmartDashboard.putNumber("X Speed Final", xSpeed);
+        SmartDashboard.putNumber("Y Speed Final", ySpeed);
+        SmartDashboard.putNumber("Turning Speed Final", turningSpeed);
         // 4. Construct desired chassis speeds
-        @SuppressWarnings("unused")
+        
         ChassisSpeeds chassisSpeeds;
         if (fieldOrientedFunction.get()) {
             // field
@@ -68,11 +81,14 @@ public class SwerveJoystickCmd extends Command {
         SwerveModuleState[] moduleStates = Constants.DriveConstants.kDriveKinematics.toSwerveModuleStates(chassisSpeeds);
 
         // 6. Output each module states to wheels
+        
         swerveSubsystem.setModuleStates(moduleStates);
+        SmartDashboard.putBoolean("Running Module State Command", true);
     }
 
     @Override
     public void end(boolean interrupted) {
+        SmartDashboard.putBoolean("Running End Command", true);
         swerveSubsystem.stopModules();
     }
 
