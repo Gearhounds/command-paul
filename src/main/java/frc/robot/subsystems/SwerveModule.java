@@ -12,6 +12,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.Constants.ModuleConstants;
+import frc.robot.MathHelp;
 
 import com.ctre.phoenix.sensors.CANCoder;
 import com.revrobotics.RelativeEncoder;
@@ -67,8 +68,8 @@ public class SwerveModule {
             driveEncoder = driveMotor.getEncoder();
             turningEncoder = turningMotor.getEncoder();
 
-            turningPidController = new PIDController(ModuleConstants.kPTurning, 0, 0);
-            turningPidController.enableContinuousInput(-Math.PI, Math.PI);
+            turningPidController = new PIDController(ModuleConstants.kPTurning, ModuleConstants.kITurning, 0);
+            turningPidController.enableContinuousInput(-180, 180);
 
         }
 
@@ -92,16 +93,14 @@ public class SwerveModule {
             return turningEncoder.getVelocity();
         }
 
-        public double getAbsEncoderRad() {
+        public double getAbsEncoder() {
             double angle = absEncoder.getPosition();
-            angle *= 2 * Math.PI;
-            angle -= absEncoderOffsetRad;
             return angle * (absEncoderReversed ? -1 : 1);
         }
 
         public void resetEncoders() {
             driveEncoder.setPosition(0);
-            turningEncoder.setPosition(getAbsEncoderRad());
+            turningEncoder.setPosition(getAbsEncoder());
         }
         
         public SwerveModuleState getState() {
@@ -115,12 +114,14 @@ public class SwerveModule {
                 stop();
                 return;
             }
-            state = SwerveModuleState.optimize(state, getState().angle);
-            driveMotor.set(Math.abs(state.speedMetersPerSecond / Constants.DriveConstants.kMaxSpeedMetersPerSecond));
-            turningMotor.set(turningPidController.calculate(getAbsEncoderRad(), state.angle.getRadians()));
+            // state = SwerveModuleState.optimize(state, getState().angle);
+            driveMotor.set(state.speedMetersPerSecond / Constants.DriveConstants.kMaxSpeedMetersPerSecond);
+            // driveMotor.set(.25);
+            turningMotor.set(MathHelp.isEqualApprox(getAbsEncoder(), state.angle.getDegrees(), 1) ? 0 : turningPidController.calculate(getAbsEncoder(), state.angle.getDegrees())/2);
+            // turningMotor.set(0);
             SmartDashboard.putNumber("Wheel Set Angle", state.angle.getDegrees());
             SmartDashboard.putNumber("Wheel Set Speed", state.speedMetersPerSecond / Constants.DriveConstants.kMaxSpeedMetersPerSecond);
-            SmartDashboard.putNumber("Wheel Turn Speed", turningPidController.calculate(getAbsEncoderRad(), state.angle.getRadians()));
+            SmartDashboard.putNumber("Wheel Turn Speed", turningPidController.calculate(getAbsEncoder(), state.angle.getRadians())/2);
             SmartDashboard.putString("Desired State", state.toString());
         }
 
